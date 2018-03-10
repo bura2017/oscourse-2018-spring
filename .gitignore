@@ -3,6 +3,7 @@
 *~
 *.o
 /lib/random_data.c
+/kern/payload.c
 
 /obj
 /jos.in

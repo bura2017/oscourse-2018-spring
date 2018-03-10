@@ -99,10 +99,19 @@ CFLAGS += -fno-tree-ch
 CFLAGS += $(shell $(CC) -fno-stack-protector -E -x c /dev/null >/dev/null 2>&1 && echo -fno-stack-protector)
 CFLAGS += $(EXTRA_CFLAGS)
 
+ifdef GRADE3_TEST
+CFLAGS += -DGRADE3_TEST=$(GRADE3_TEST)
+CFLAGS += -DGRADE3_FUNC=$(GRADE3_FUNC)
+CFLAGS += -DGRADE3_FAIL=$(GRADE3_FAIL)
+CFLAGS += -DGRADE3_PFX1=$(GRADE3_PFX1)
+CFLAGS += -DGRADE3_PFX2=$(GRADE3_PFX2)
+.SILENT:
+endif
+
 # Common linker flags
 LDFLAGS := -m elf_i386
 
-# Linker flags for JOS user programs
+# Linker flags for JOS programs
 ULDFLAGS := -T user/user.ld
 
 GCC_LIB := $(shell $(CC) $(CFLAGS) -print-libgcc-file-name)
@@ -122,7 +131,8 @@ all: .git/hooks/post-checkout .git/hooks/pre-commit
 # make it so that no intermediate .o files are ever deleted
 .PRECIOUS: %.o $(OBJDIR)/boot/%.o $(OBJDIR)/kern/%.o \
 	   $(OBJDIR)/lib/%.o $(OBJDIR)/fs/%.o $(OBJDIR)/net/%.o \
-	   $(OBJDIR)/user/%.o
+	   $(OBJDIR)/user/%.o \
+	   $(OBJDIR)/prog/%.o
 
 KERN_CFLAGS := $(CFLAGS) -DJOS_KERNEL
 USER_CFLAGS := $(CFLAGS)
@@ -148,6 +158,9 @@ $(OBJDIR)/.vars.%: FORCE
 # Include Makefrags for subdirectories
 include boot/Makefrag
 include kern/Makefrag
+include lib/Makefrag
+include prog/Makefrag
+
 
 
 QEMUOPTS = -drive format=raw,index=0,media=disk,file=$(OBJDIR)/kern/kernel.img -serial mon:stdio -gdb tcp::$(GDBPORT)
