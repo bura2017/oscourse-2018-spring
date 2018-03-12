@@ -211,6 +211,7 @@ env_alloc(struct Env **newenv_store, envid_t parent_id)
 	e->env_tf.tf_cs = GD_KT | 0;
 	//LAB 3: Your code here.
 	e->env_tf.tf_esp = 0x210000 + 2 * PGSIZE * (e - envs);
+//	cprintf ("%d %d\n", e->env_id - generation, e - envs);
 #else
 #endif
 	// You will set e->env_tf.tf_eip later.
@@ -244,14 +245,18 @@ bind_functions(struct Env *e, struct Elf *elf)
 			for (; j >= 0; j--) {
 				if (ELF32_ST_TYPE(elf32_sym->st_info) == STT_OBJECT) {
 					name = temp + elf32_sym->st_name;
+//					cprintf("name %s\n", name);
 					addr = find_function(name);
 					if (addr != 0)
 						*((int *) elf32_sym->st_value) = addr;
+//					else
+//					    cprintf("ERROR finding function name = %s\n", name);
 				}
 				elf32_sym++;
 			}
 		}
 	}
+
 	/*
 	*((int *) 0x00231008) = (int) &cprintf;
 	*((int *) 0x00221004) = (int) &sys_yield;
@@ -317,7 +322,7 @@ load_icode(struct Env *e, uint8_t *binary, size_t size)
         //  The ph->p_filesz bytes from the ELF binary, starting at
         //  'binary + ph->p_offset', should be copied to address ph->p_va.
 			memmove((void *)ph->p_va, binary + ph->p_offset, ph->p_filesz);
-			//Any remaining memory bytes should be cleared to zero.
+        //  Any remaining memory bytes should be cleared to zero.
 			memset((void *)(ph->p_va + ph->p_filesz), 0, ph->p_memsz - ph->p_filesz);
 		}
 		ph++;
@@ -376,8 +381,16 @@ void
 env_destroy(struct Env *e)
 {
 	//LAB 3: Your code here.
+	if (e->env_status == ENV_RUNNING && curenv != e) {
+		e->env_status = ENV_DYING;
+		return;
+	}
 	env_free(e);
 
+	if (curenv == e) {
+		curenv = NULL;
+		sched_yield();
+	}
 	cprintf("Destroyed the only environment - nothing more to do!\n");
 	while (1)
 		monitor(NULL);

@@ -178,15 +178,19 @@ debuginfo_eip(uintptr_t addr, struct Eipdebuginfo *info)
 	//	There's a particular stabs type used for line numbers.
 	//	Look at the STABS documentation and <inc/stab.h> to find
 	//	which one.
-  	stab_binsearch(stabs, &lline, &rline, N_SLINE, addr);
-	info->eip_line = stabs[lline].n_desc;
+	// Your code here.
 
+	stab_binsearch(stabs, &lline, &rline, N_SLINE, addr);
+	info->eip_line = stabs[lline].n_desc;
 
 	// Search backwards from the line number for the relevant filename
 	// stab.
 	// We can't just use the "lfile" stab because inlined functions
 	// can interpolate code from a different file!
 	// Such included source files use the N_SOL stab type.
+
+
+
 	while (lline >= lfile
 	       && stabs[lline].n_type != N_SOL
 	       && (stabs[lline].n_type != N_SO || !stabs[lline].n_value))
@@ -210,20 +214,19 @@ uintptr_t
 find_function(const char * const fname)
 {
 	const struct Stab *stabs = __STAB_BEGIN__, *stab_end = __STAB_END__;
-	//const char *stabstr = __STABSTR_BEGIN__, *stabstr_end = __STABSTR_END__;
+	// const char *stabstr = __STABSTR_BEGIN__, *stabstr_end = __STABSTR_END__;
 	const char *stabstr = __STABSTR_BEGIN__;
 	//LAB 3: Your code here.
-
-	int i;
-	char *str;
-
-	for (i = 0; i < stab_end - stabs; i++) {
-		if (stabs[i].n_type == N_FUN) {
-			str = (char*)stabstr + stabs[i].n_strx;
-			if (strncmp(fname, str, strlen(fname)) == 0)
+	
+	for (int i = 0; i < stab_end - stabs; i++) {
+		if (stabs[i].n_type != N_FUN) continue;
+		char *str = (char*)stabstr + stabs[i].n_strx;
+		size_t len = strfind(str, ':') - str;
+		if (len == strlen(fname) && !strncmp(fname, str, len)){
 				return stabs[i].n_value;
 		}
 	}
+
 
 	return 0;
 }
