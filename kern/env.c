@@ -126,6 +126,7 @@ env_init(void)
     env_free_list = NULL;
     for (i = NENV - 1; i >= 0; i--) {
         envs[i].env_status = ENV_FREE;
+        envs[i].env_type = ENV_TYPE_KERNEL;
         envs[i].env_id = 0;
         envs[i].env_link = env_free_list;
         env_free_list = &envs[i];
@@ -209,7 +210,7 @@ env_alloc(struct Env **newenv_store, envid_t parent_id)
 	e->env_tf.tf_ss = GD_KD | 0;
 	e->env_tf.tf_cs = GD_KT | 0;
 	//LAB 3: Your code here.
-	e->env_tf.tf_esp = 0x210000 + 2 * PGSIZE * (e->env_id - generation);
+	e->env_tf.tf_esp = 0x210000 + 2 * PGSIZE * (e - envs);
 #else
 #endif
 	// You will set e->env_tf.tf_eip later.
@@ -307,27 +308,20 @@ load_icode(struct Env *e, uint8_t *binary, size_t size)
 
 	//LAB 3: Your code here.
 	struct Elf *elfhdr = (struct Elf *)binary;
-	struct Proghdr *ph;
-	int ph_num;
-
-	// is this a valid ELF?
-	if (elfhdr->e_magic != ELF_MAGIC) {
-		panic("%s: not a valid ELF image\n", __func__);
-	}
+	struct Proghdr *ph = (struct Proghdr *)((uint8_t *)elfhdr + elfhdr->e_phoff);
+	int n = elfhdr->e_phnum;
+//	panic("e_phnum %d\n", n);
 	
-	ph = (struct Proghdr *)((uint8_t *)elfhdr + elfhdr->e_phoff);
-	ph_num = elfhdr->e_phnum;
-//	panic("ph_num %d\n", ph_num);
-	
-	while(ph_num >= 0) {
+	for (; n >= 0; n--) {
 		if(ph->p_type == ELF_PROG_LOAD) {
+        //  The ph->p_filesz bytes from the ELF binary, starting at
+        //  'binary + ph->p_offset', should be copied to address ph->p_va.
 			memmove((void *)ph->p_va, binary + ph->p_offset, ph->p_filesz);
+			//Any remaining memory bytes should be cleared to zero.
 			memset((void *)(ph->p_va + ph->p_filesz), 0, ph->p_memsz - ph->p_filesz);
 		}
 		ph++;
-		ph_num--;
 	}
-	
 	e->env_tf.tf_eip = elfhdr->e_entry;
 	
 #ifdef CONFIG_KSPACE
@@ -353,8 +347,8 @@ env_create(uint8_t *binary, size_t size, enum EnvType type)
 	r = env_alloc(&e, 0);
 	if (r < 0)
 		panic("%s: %i\n", __func__, r);
-
 	e->env_type = type;
+
 	load_icode(e, binary, size);
 }
 
