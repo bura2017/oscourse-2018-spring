@@ -12,6 +12,7 @@
 #include <kern/monitor.h>
 #include <kern/sched.h>
 #include <kern/cpu.h>
+#include <kern/kdebug.h>
 
 struct Env env_array[NENV];
 struct Env *curenv = NULL;
@@ -121,6 +122,14 @@ env_init(void)
 {
 	// Set up envs array
 	//LAB 3: Your code here.
+    int i;
+    env_free_list = NULL;
+    for (i = NENV - 1; i >= 0; i--) {
+        envs[i].env_status = ENV_FREE;
+        envs[i].env_id = 0;
+        envs[i].env_link = env_free_list;
+        env_free_list = &envs[i];
+    }
 	
 	// Per-CPU part of the initialization
 	env_init_percpu();
@@ -200,7 +209,7 @@ env_alloc(struct Env **newenv_store, envid_t parent_id)
 	e->env_tf.tf_ss = GD_KD | 0;
 	e->env_tf.tf_cs = GD_KT | 0;
 	//LAB 3: Your code here.
-	// e->env_tf.tf_esp = 0x210000;
+	e->env_tf.tf_esp = 0x210000 + 2 * PGSIZE * (e->env_id - generation);
 #else
 #endif
 	// You will set e->env_tf.tf_eip later.
@@ -220,6 +229,28 @@ bind_functions(struct Env *e, struct Elf *elf)
 	//find_function from kdebug.c should be used
 	//LAB 3: Your code here.
 
+	struct Secthdr *secthdr = (struct Secthdr *) ((uint8_t *)elf + elf->e_shoff);
+	struct Elf32_Sym *elf32_sym;
+
+	const char *name;
+	int addr;
+
+	for (int i = 0; i < elf->e_shnum; i++) {
+		if(secthdr[i].sh_type == ELF_SHT_SYMTAB) { //symbol table
+			elf32_sym = (struct Elf32_Sym *) ((uint8_t *)elf + secthdr[i].sh_offset);
+			char *temp = (char *) ((uint8_t *)elf + secthdr[secthdr[i].sh_link].sh_offset);
+			int j = secthdr[i].sh_size / secthdr[i].sh_entsize;
+			for (; j >= 0; j--) {
+				if (ELF32_ST_TYPE(elf32_sym->st_info) == STT_OBJECT) {
+					name = temp + elf32_sym->st_name;
+					addr = find_function(name);
+					if (addr != 0)
+						*((int *) elf32_sym->st_value) = addr;
+				}
+				elf32_sym++;
+			}
+		}
+	}
 	/*
 	*((int *) 0x00231008) = (int) &cprintf;
 	*((int *) 0x00221004) = (int) &sys_yield;
@@ -275,10 +306,33 @@ load_icode(struct Env *e, uint8_t *binary, size_t size)
 	//  What?  (See env_run() and env_pop_tf() below.)
 
 	//LAB 3: Your code here.
+	struct Elf *elfhdr = (struct Elf *)binary;
+	struct Proghdr *ph;
+	int ph_num;
+
+	// is this a valid ELF?
+	if (elfhdr->e_magic != ELF_MAGIC) {
+		panic("%s: not a valid ELF image\n", __func__);
+	}
+	
+	ph = (struct Proghdr *)((uint8_t *)elfhdr + elfhdr->e_phoff);
+	ph_num = elfhdr->e_phnum;
+//	panic("ph_num %d\n", ph_num);
+	
+	while(ph_num >= 0) {
+		if(ph->p_type == ELF_PROG_LOAD) {
+			memmove((void *)ph->p_va, binary + ph->p_offset, ph->p_filesz);
+			memset((void *)(ph->p_va + ph->p_filesz), 0, ph->p_memsz - ph->p_filesz);
+		}
+		ph++;
+		ph_num--;
+	}
+	
+	e->env_tf.tf_eip = elfhdr->e_entry;
 	
 #ifdef CONFIG_KSPACE
 	// Uncomment this for task №5.
-	//bind_functions();
+	bind_functions(e, elfhdr);
 #endif
 }
 
@@ -293,6 +347,15 @@ void
 env_create(uint8_t *binary, size_t size, enum EnvType type)
 {
 	//LAB 3: Your code here.
+	struct Env *e;
+	int r;
+
+	r = env_alloc(&e, 0);
+	if (r < 0)
+		panic("%s: %i\n", __func__, r);
+
+	e->env_type = type;
+	load_icode(e, binary, size);
 }
 
 //
@@ -419,7 +482,17 @@ env_run(struct Env *e)
 	//	e->env_tf to sensible values.
 	//
 	//LAB 3: Your code here.
+	if (!curenv || curenv->env_id != e->env_id) {
+		if (curenv && curenv->env_status == ENV_RUNNING) {
+			curenv->env_status = ENV_RUNNABLE;
+		}
 
+		e->env_status = ENV_RUNNING;
+		e->env_runs++;
+		curenv = e;
+	} else if (curenv && curenv->env_status == ENV_RUNNABLE) {
+		curenv->env_status = ENV_RUNNING;
+	}
 
 	env_pop_tf(&e->env_tf);
 }
