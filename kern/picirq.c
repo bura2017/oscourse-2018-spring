@@ -64,6 +64,7 @@ pic_init(void)
 	outb(IO_PIC2_CMND, 0x68);               /* OCW3 */
 	outb(IO_PIC2_CMND, 0x0a);               /* OCW3 */
 
+    irq_mask_8259A = ~((1<<IRQ_CLOCK) | (1<<IRQ_SLAVE));
 	if (irq_mask_8259A != 0xFFFF)
 		irq_setmask_8259A(irq_mask_8259A);
 }
