@@ -11,10 +11,13 @@ rtc_init(void)
 
 	outb(IO_RTC_CMND, NMI_LOCK | RTC_BREG);
 	uint8_t b_reg = inb(IO_RTC_DATA);
+
+	outb(IO_RTC_CMND, NMI_LOCK | RTC_BREG);
 	outb(IO_RTC_DATA, b_reg | RTC_PIE);
 
 	outb(IO_RTC_CMND, NMI_LOCK | RTC_AREG);
 	uint8_t a_reg = inb(IO_RTC_DATA);
+	outb(IO_RTC_CMND, NMI_LOCK | RTC_AREG);
 	outb(IO_RTC_DATA, (a_reg & 0xF0) | 0xF); // rate = 0xF
 
 	nmi_enable();
