@@ -31,6 +31,7 @@ static void check_list(void)
 void *
 test_alloc(uint8_t nbytes)
 {
+    lock_kernel();
 	Header *p;
 	unsigned nunits;
 
@@ -56,18 +57,22 @@ test_alloc(uint8_t nbytes)
 				p += p->s.size;
 				p->s.size = nunits;
 			}
+            unlock_kernel();
 			return (void *)(p + 1);
 		}
 		if (p == freep) { /* wrapped around free list */
+            unlock_kernel();
 			return NULL;
 		}
 	}
+    unlock_kernel();
 }
 
 /* free: put block ap in free list */
 void
 test_free(void *ap)
 {
+    lock_kernel();
 	Header *bp, *p;
 	bp = (Header *) ap - 1; /* point to block header */
 
@@ -95,5 +100,6 @@ test_free(void *ap)
 	freep = p;
 
 	check_list();
+    unlock_kernel();
 }
 
