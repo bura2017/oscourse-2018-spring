@@ -31,12 +31,12 @@ static void check_list(void)
 void *
 test_alloc(uint8_t nbytes)
 {
-    lock_kernel();
 	Header *p;
 	unsigned nunits;
 
 	nunits = (nbytes + sizeof(Header) - 1) / sizeof(Header) + 1;
 
+	lock_kernel();
 	if (freep == NULL) { /* no free list yet */
 		((Header *) &space)->s.next = (Header *) &base;
 		((Header *) &space)->s.prev = (Header *) &base;
@@ -72,10 +72,10 @@ test_alloc(uint8_t nbytes)
 void
 test_free(void *ap)
 {
-    lock_kernel();
 	Header *bp, *p;
 	bp = (Header *) ap - 1; /* point to block header */
 
+	lock_kernel();
 	for (p = freep; !(bp > p && bp < p->s.next); p = p->s.next)
 		if (p >= p->s.next && (bp > p || bp < p->s.next))
 			break; /* freed block at start or end of arena */
