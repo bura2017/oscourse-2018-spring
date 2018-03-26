@@ -7,6 +7,7 @@
 #include <kern/monitor.h>
 #include <kern/tsc.h>
 #include <kern/console.h>
+#include <kern/pmap.h>
 #include <kern/env.h>
 #include <kern/trap.h>
 #include <kern/sched.h>
@@ -32,6 +33,11 @@ i386_init(void)
 
 	cprintf("6828 decimal is %o octal!\n", 6828);
 	cprintf("END: %p\n", end);
+
+#ifndef CONFIG_KSPACE
+	// Lab 6 memory management initialization functions
+	mem_init();
+#endif
 
 	// user environment initialization functions
 	env_init();
