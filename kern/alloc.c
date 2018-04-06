@@ -65,7 +65,6 @@ test_alloc(uint8_t nbytes)
 			return NULL;
 		}
 	}
-    unlock_kernel();
 }
 
 /* free: put block ap in free list */

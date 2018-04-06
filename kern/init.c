@@ -47,7 +47,7 @@ i386_init(void)
 	pic_init();
 	rtc_init();
 
-#ifdef CONFIG_KSPACE
+#ifdef CONFIG_KSPACE2
 	// Touch all you want.
 	ENV_CREATE_KERNEL_TYPE(prog_test1);
 	ENV_CREATE_KERNEL_TYPE(prog_test2);
