@@ -113,20 +113,17 @@ mon_timer_stop(int argc, char **argv, struct Trapframe *tf)
 int
 mon_list_pages(int argc, char **argv, struct Trapframe *tf)
 {
-	int free = (pages[0].pp_ref) ? 0 : 1;
+    int free = (pages[0].pp_link != NULL && pages[0].pp_ref == 0) ? 1 : 0;
 
 	cprintf("npages: %d\n", npages);
 
 	int n = 1;
-	for (int i = 1; i < npages; i++) {
-		int temp = (pages[i].pp_ref) ? 0 : 1;
-		if ((temp != free) || (i == npages - 1)) {
+	for (int i = 1; i <= npages; i++) {
+        int temp = (pages[i].pp_link != NULL && pages[i].pp_ref == 0) ? 1 : 0;
+		if ((temp != free)) {
 			if (n == i) {
 				cprintf("%d %s\n", i, free ? "FREE" : "ALLOCATED");
 			} else {
-				if (i == npages - 1){
-					i++;
-				}
 				cprintf("%d..%d %s\n", n + 1, i, free ? "FREE" : "ALLOCATED");
 				n = i;
 			}
@@ -145,7 +142,7 @@ mon_list_pages(int argc, char **argv, struct Trapframe *tf)
 static int
 runcmd(char *buf, struct Trapframe *tf)
 {
-	int argc;
+    int argc;
 	char *argv[MAXARGS];
 	int i;
 

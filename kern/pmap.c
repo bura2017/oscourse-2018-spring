@@ -209,7 +209,7 @@ page_init(void)
     size_t j = PGNUM(PADDR(boot_alloc(0)));
 
     for (; i < j; i++) {
-        pages[i].pp_ref++;
+        pages[i].pp_ref = 1;
         pages[i].pp_link = NULL;
     }
 
