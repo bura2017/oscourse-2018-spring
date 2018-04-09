@@ -243,7 +243,7 @@ page_alloc(int alloc_flags)
 {
 	// Fill this function in
     struct PageInfo *pp = NULL;
-    if (page_free_list == &last_page) {
+    if (page_free_list == &last_page || page_free_list == NULL) {
 //    if (page_free_list == NULL) {
         return pp;
     }
@@ -429,7 +429,7 @@ check_page_free_list(bool only_low_memory)
 	int nfree_basemem = 0, nfree_extmem = 0;
 	char *first_free_page;
 
-	if (!page_free_list)
+	if (!page_free_list || page_free_list == &last_page)
 		panic("'page_free_list' is a null pointer!");
 
 	if (only_low_memory) {
@@ -437,7 +437,8 @@ check_page_free_list(bool only_low_memory)
 		// list, since entry_pgdir does not map all pages.
 		struct PageInfo *pp1, *pp2;
 		struct PageInfo **tp[2] = { &pp1, &pp2 };
-		for (pp = page_free_list; pp; pp = pp->pp_link) {
+
+		for (pp = page_free_list; pp && pp != &last_page; pp = pp->pp_link) {
 			int pagetype = PDX(page2pa(pp)) >= pdx_limit;
 			*tp[pagetype] = pp;
 			tp[pagetype] = &pp->pp_link;
@@ -449,12 +450,14 @@ check_page_free_list(bool only_low_memory)
 
 	// if there's a page that shouldn't be on the free list,
 	// try to make sure it eventually causes trouble.
-	for (pp = page_free_list; pp; pp = pp->pp_link)
+	for (pp = page_free_list; pp && pp != &last_page; pp = pp->pp_link)
+//        if (pp == &last_page) break;
 		if (PDX(page2pa(pp)) < pdx_limit)
 			memset(page2kva(pp), 0x97, 128);
 
 	first_free_page = (char *) boot_alloc(0);
-	for (pp = page_free_list; pp; pp = pp->pp_link) {
+	for (pp = page_free_list; pp && pp != &last_page; pp = pp->pp_link) {
+//        if (pp == &last_page) break;
 		// check that we didn't corrupt the free list itself
 		assert(pp >= pages);
 		assert(pp < pages + npages);
@@ -548,7 +551,7 @@ check_page_alloc(void)
 	page_free(pp2);
 
 	// number of free pages should be the same
-	for (pp = page_free_list; pp; pp = pp->pp_link)
+	for (pp = page_free_list; pp && pp != &last_page; pp = pp->pp_link)
 		--nfree;
 	assert(nfree == 0);
 
