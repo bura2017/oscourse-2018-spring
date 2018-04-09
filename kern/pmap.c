@@ -438,7 +438,7 @@ check_page_free_list(bool only_low_memory)
 		struct PageInfo *pp1, *pp2;
 		struct PageInfo **tp[2] = { &pp1, &pp2 };
 
-		for (pp = page_free_list; pp && pp != &last_page; pp = pp->pp_link) {
+		for (pp = page_free_list; pp; pp = pp->pp_link) {
 			int pagetype = PDX(page2pa(pp)) >= pdx_limit;
 			*tp[pagetype] = pp;
 			tp[pagetype] = &pp->pp_link;
@@ -451,13 +451,11 @@ check_page_free_list(bool only_low_memory)
 	// if there's a page that shouldn't be on the free list,
 	// try to make sure it eventually causes trouble.
 	for (pp = page_free_list; pp && pp != &last_page; pp = pp->pp_link)
-//        if (pp == &last_page) break;
 		if (PDX(page2pa(pp)) < pdx_limit)
 			memset(page2kva(pp), 0x97, 128);
 
 	first_free_page = (char *) boot_alloc(0);
 	for (pp = page_free_list; pp && pp != &last_page; pp = pp->pp_link) {
-//        if (pp == &last_page) break;
 		// check that we didn't corrupt the free list itself
 		assert(pp >= pages);
 		assert(pp < pages + npages);
@@ -497,7 +495,7 @@ check_page_alloc(void)
 		panic("'pages' is a null pointer!");
 
 	// check number of free pages
-	for (pp = page_free_list, nfree = 0; pp; pp = pp->pp_link)
+	for (pp = page_free_list, nfree = 0; pp && pp != &last_page; pp = pp->pp_link)
 		++nfree;
 
 	// should be able to allocate three pages
