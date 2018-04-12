@@ -117,19 +117,21 @@ mon_list_pages(int argc, char **argv, struct Trapframe *tf)
 
 	cprintf("npages: %d\n", npages);
 
-	int n = 1;
-	for (int i = 1; i <= npages; i++) {
+	int n = 0;
+	for (int i = 1; i < npages; i++) {
         int temp = (pages[i].pp_link == NULL) ? 0 : 1;
 		if ((temp != free)) {
-			if (n == i) {
-				cprintf("%d %s\n", i, free ? "FREE" : "ALLOCATED");
+			if (n + 1 == i) {
+				cprintf("%d %s\n", n + 1, free ? "FREE" : "ALLOCATED");
 			} else {
 				cprintf("%d..%d %s\n", n + 1, i, free ? "FREE" : "ALLOCATED");
-				n = i;
 			}
+            n = i;
 			free = temp;
 		}
 	}
+    cprintf("%d..%d %s\n", n + 1, npages, free ? "FREE" : "ALLOCATED");
+
 
 	return 0;
 }
