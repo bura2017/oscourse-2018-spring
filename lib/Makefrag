@@ -1,9 +1,14 @@
 OBJDIRS += lib
 
-LIB_SRCFILES :=		lib/libmain.c \
+LIB_SRCFILES :=		lib/console.c \
+			lib/libmain.c \
+			lib/exit.c \
+			lib/panic.c \
+			lib/printf.c \
 			lib/printfmt.c \
-			lib/string.c
-
+			lib/string.c \
+			lib/readline.c \
+			lib/syscall.c
 
 ifeq ($(CONFIG_KSPACE),y)
 LIB_SRCFILES +=		lib/random.c \

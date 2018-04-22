@@ -15,6 +15,8 @@ void (* volatile sys_exit)(void);
 void
 libmain(int argc, char **argv)
 {
+	// set thisenv to point at our Env structure in envs[].
+	// LAB 8: Your code here.
 	thisenv = 0;
 
 	// save the name of the program so that panic() can use it
@@ -27,6 +29,8 @@ libmain(int argc, char **argv)
 	// exit
 #ifdef JOS_PROG
 	sys_exit();
+#else
+	exit();
 #endif
 }
 

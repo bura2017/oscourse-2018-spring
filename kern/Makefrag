@@ -55,6 +55,20 @@ ifeq ($(CONFIG_KSPACE),y)
 KERN_BINFILES := $(sort $(shell find prog/ -type f -name '*.c'))
 KERN_BINFILES := $(patsubst %.c, $(OBJDIR)/%, $(KERN_BINFILES))
 else
+KERN_BINFILES :=	user/hello \
+			user/buggyhello \
+			user/buggyhello2 \
+			user/evilhello \
+			user/testbss \
+			user/divzero \
+			user/breakpoint \
+			user/softint \
+			user/badsegment \
+			user/faultread \
+			user/faultreadkernel \
+			user/faultwrite \
+			user/faultwritekernel
+KERN_BINFILES := $(patsubst %, $(OBJDIR)/%, $(KERN_BINFILES))
 endif
 
 define PAYLOAD

@@ -8,11 +8,14 @@
 #define JOS_INC_LIB_H 1
 
 #include <inc/types.h>
+#include <inc/stdio.h>
 #include <inc/stdarg.h>
 #include <inc/string.h>
 #include <inc/error.h>
+#include <inc/assert.h>
 #include <inc/env.h>
 #include <inc/memlayout.h>
+#include <inc/syscall.h>
 
 #define USED(x)		(void)(x)
 
@@ -25,8 +28,19 @@ extern const volatile struct Env *thisenv;
 extern const volatile struct Env envs[NENV];
 //extern const volatile struct PageInfo pages[];
 
+// exit.c
+void	exit(void);
+
 // readline.c
 char*	readline(const char *buf);
+
+// syscall.c
+void	sys_cputs(const char *string, size_t len);
+int	sys_cgetc(void);
+envid_t	sys_getenvid(void);
+int	sys_env_destroy(envid_t);
+
+
 
 /* File open modes */
 #define	O_RDONLY	0x0000		/* open for reading only */
