@@ -199,6 +199,16 @@ env_setup_vm(struct Env *e)
 	//    - The functions in kern/pmap.h are handy.
 
 	// LAB 8: Your code here.
+	e->env_pgdir = page2kva(p);
+
+	int i;
+	for (i = 0; i < PDX(UTOP); i++)
+		e->env_pgdir[i] = 0;
+
+	for (; i < NPDENTRIES; i++)
+		e->env_pgdir[i] = kern_pgdir[i];
+
+	p->pp_ref++;
 
 	// UVPT maps the env's own page table read-only.
 	// Permissions: kernel R, user R
@@ -305,6 +315,18 @@ region_alloc(struct Env *e, void *va, size_t len)
 	//   'va' and 'len' values that are not page-aligned.
 	//   You should round va down, and round (va + len) up.
 	//   (Watch out for corner-cases!)
+	uintptr_t addr = ROUNDDOWN((uintptr_t) va, PGSIZE);
+	uintptr_t end = ROUNDUP((uintptr_t) va + len, PGSIZE);
+
+	while (addr < end) {
+		// Do not zero the pages, so call page_alloc with 0
+		struct PageInfo *page = page_alloc(0);
+		if (!page)
+			panic("region_alloc: page_alloc failed");
+
+		page_insert(e->env_pgdir, page, (void *) addr, PTE_U | PTE_W);
+		addr += PGSIZE;
+	}
 }
 
 #ifdef CONFIG_KSPACE
@@ -430,6 +452,7 @@ load_icode(struct Env *e, uint8_t *binary, size_t size)
 	// Now map one page for the program's initial stack
 	// at virtual address USTACKTOP - PGSIZE.
 	// LAB 8: Your code here.
+	region_alloc(e, (void *) (USTACKTOP - PGSIZE), PGSIZE);
 }
 
 //
