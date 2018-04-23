@@ -444,6 +444,7 @@ load_icode(struct Env *e, uint8_t *binary, size_t size)
 	// at virtual address USTACKTOP - PGSIZE.
 	// LAB 8.
     region_alloc(e, (void *) (USTACKTOP - PGSIZE), PGSIZE);
+    lcr3(PADDR(kern_pgdir));
 }
 
 //
@@ -657,11 +658,11 @@ env_run(struct Env *e)
 		e->env_status = ENV_RUNNING;
 		e->env_runs++;
 		curenv = e;
-        lcr3(PADDR(curenv->env_pgdir));
 	} else if (curenv && curenv->env_status == ENV_RUNNABLE) {
 		curenv->env_status = ENV_RUNNING;
 	}
 
+    lcr3(PADDR(curenv->env_pgdir));
 	env_pop_tf(&e->env_tf);
 }
 
