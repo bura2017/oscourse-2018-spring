@@ -99,7 +99,7 @@ boot_alloc(uint32_t n)
 	// nextfree.  Make sure nextfree is kept aligned
 	// to a multiple of PGSIZE.
 	//
-	// LAB 6: Your code here.
+	// LAB 6.
 	result = nextfree;
 
 	nextfree += ROUNDUP(n, PGSIZE);
@@ -189,7 +189,7 @@ mem_init(void)
 	// Permissions:
 	//    - the new image at UENVS  -- kernel R, user R
 	//    - envs itself -- kernel RW, user NONE
-	// LAB 8: Your code here.
+	// LAB 8.
 	boot_map_region(kern_pgdir, UENVS, PTSIZE, PADDR(envs), PTE_U);
 
 	//////////////////////////////////////////////////////////////////////
@@ -609,7 +609,7 @@ static uintptr_t user_mem_check_addr;
 int
 user_mem_check(struct Env *env, const void *va, size_t len, int perm)
 {
-	// LAB 8: Your code here.
+	// LAB 8.
 	if (!(perm & PTE_P))
 		perm |= PTE_P;
 	

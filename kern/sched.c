@@ -25,7 +25,7 @@ sched_yield(void)
 	// simply drop through to the code
 	// below to halt the cpu.
 
-	//LAB 3: Your code here.
+	//LAB 3.
 	// env_run(&envs[0]);
     size_t i = curenv ? (curenv - envs + 1) & (NENV - 1) : 0;
     size_t count = 0;

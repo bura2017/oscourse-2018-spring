@@ -127,7 +127,7 @@ void
 env_init(void)
 {
 	// Set up envs array
-	//LAB 3: Your code here.
+	//LAB 3.
     int i;
     env_free_list = NULL;
     for (i = NENV - 1; i >= 0; i--) {
@@ -268,7 +268,7 @@ env_alloc(struct Env **newenv_store, envid_t parent_id)
 	e->env_tf.tf_es = GD_KD | 0;
 	e->env_tf.tf_ss = GD_KD | 0;
 	e->env_tf.tf_cs = GD_KT | 0;
-	//LAB 3: Your code here.
+	//LAB 3.
 	e->env_tf.tf_esp = 0x210000 + 2 * PGSIZE * (e - envs);
 //	cprintf ("%d %d\n", e->env_id - generation, e - envs);
 #else
@@ -329,7 +329,7 @@ static void
 bind_functions(struct Env *e, struct Elf *elf)
 {
 	//find_function from kdebug.c should be used
-	//LAB 3: Your code here.
+	//LAB 3.
 
 	struct Secthdr *secthdr = (struct Secthdr *) ((uint8_t *)elf + elf->e_shoff);
 	struct Elf32_Sym *elf32_sym;
@@ -463,7 +463,7 @@ load_icode(struct Env *e, uint8_t *binary, size_t size)
 void
 env_create(uint8_t *binary, size_t size, enum EnvType type)
 {
-	//LAB 3: Your code here.
+	//LAB 3.
 	struct Env *e;
 	int r;
 
@@ -539,7 +539,7 @@ env_free(struct Env *e)
 void
 env_destroy(struct Env *e)
 {
-	//LAB 3: Your code here.
+	//LAB 3.
 	if (e->env_status == ENV_RUNNING && curenv != e) {
 		e->env_status = ENV_DYING;
 		return;

@@ -141,7 +141,7 @@ debuginfo_eip(uintptr_t addr, struct Eipdebuginfo *info)
 
 		// Make sure this memory is valid.
 		// Return -1 if it is not.  Hint: Call user_mem_check.
-		// LAB 8: Your code here.
+		// LAB 8.
 		if (user_mem_check(curenv, usd, sizeof(struct UserStabData), PTE_U) < 0)
 			return -1;
 
@@ -151,7 +151,7 @@ debuginfo_eip(uintptr_t addr, struct Eipdebuginfo *info)
 		stabstr_end = usd->stabstr_end;
 
 		// Make sure the STABS and string table memory is valid.
-		// LAB 8: Your code here.
+		// LAB 8.
 		if (user_mem_check(curenv, stabs, (uintptr_t) (stab_end - stabs), PTE_U) < 0)
 			return -1;
 		if (user_mem_check(curenv, stabstr, (uintptr_t) (stabstr_end - stabstr), PTE_U) < 0)
@@ -209,7 +209,7 @@ debuginfo_eip(uintptr_t addr, struct Eipdebuginfo *info)
 	//	There's a particular stabs type used for line numbers.
 	//	Look at the STABS documentation and <inc/stab.h> to find
 	//	which one.
-	// Your code here.
+	// LAB 2.
 
 	stab_binsearch(stabs, &lline, &rline, N_SLINE, addr);
 	info->eip_line = stabs[lline].n_desc;
@@ -247,7 +247,7 @@ find_function(const char * const fname)
 	const struct Stab *stabs = __STAB_BEGIN__, *stab_end = __STAB_END__;
 	// const char *stabstr = __STABSTR_BEGIN__, *stabstr_end = __STABSTR_END__;
 	const char *stabstr = __STABSTR_BEGIN__;
-	//LAB 3: Your code here.
+	//LAB 3.
 	
 	for (int i = 0; i < stab_end - stabs; i++) {
 		if (stabs[i].n_type != N_FUN) continue;

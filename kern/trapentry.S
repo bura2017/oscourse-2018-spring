@@ -102,7 +102,7 @@ clock_thdlr:
 	jmp .
 #else
 TRAPHANDLER_NOEC(clock_thdlr, IRQ_OFFSET + IRQ_CLOCK)
-// LAB 8: Your code here.
+// LAB 8.
 TRAPHANDLER_NOEC(divide_thdlr, T_DIVIDE)
 TRAPHANDLER_NOEC(debug_thdlr, T_DEBUG)
 TRAPHANDLER_NOEC(nmi_thdlr, T_NMI)

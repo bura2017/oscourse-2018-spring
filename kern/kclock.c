@@ -7,7 +7,7 @@ void
 rtc_init(void)
 {
 	nmi_disable();
-	// LAB 4: your code here
+	// LAB 4
 
 	outb(IO_RTC_CMND, NMI_LOCK | RTC_BREG);
 	uint8_t b_reg = inb(IO_RTC_DATA);
@@ -27,7 +27,7 @@ uint8_t
 rtc_check_status(void)
 {
 	uint8_t status = 0;
-	// LAB 4: your code here
+	// LAB 4
 	outb(IO_RTC_CMND, RTC_CREG);
 	status = inb(IO_RTC_DATA);
 
