@@ -339,10 +339,35 @@ page_fault_handler(struct Trapframe *tf)
 
 	// LAB 9: Your code here.
 
-	// Destroy the environment that caused the fault.
-	cprintf("[%08x] user fault va %08x ip %08x\n",
-		curenv->env_id, fault_va, tf->tf_eip);
-	print_trapframe(tf);
-	env_destroy(curenv);
+	if (!curenv->env_pgfault_upcall || ((tf->tf_esp >= USTACKTOP) && (tf->tf_esp < UXSTACKTOP - PGSIZE))) {
+		cprintf("[%08x] user fault va %08x ip %08x\n", curenv->env_id, fault_va, tf->tf_eip);
+		print_trapframe(tf);
+		env_destroy(curenv);
+	}
+
+	uintptr_t stack;
+	if (tf->tf_esp >= UXSTACKTOP - PGSIZE && tf->tf_esp < UXSTACKTOP) {
+        stack = tf->tf_esp - 4;
+	} else {
+        stack = UXSTACKTOP;
+    }
+	stack = stack - sizeof(struct UTrapframe);
+
+// Checks that environment 'env' is allowed to access the range
+// of memory [va, va+len) with permissions 'perm | PTE_U | PTE_P'.
+	user_mem_assert(curenv, (void *) stack, UXSTACKTOP - stack, PTE_W);
+
+	struct UTrapframe *utf = (struct UTrapframe *) stack;
+	utf->utf_fault_va = fault_va;
+	utf->utf_err      = tf->tf_err;
+	utf->utf_regs     = tf->tf_regs;
+	utf->utf_eip      = tf->tf_eip;
+	utf->utf_eflags   = tf->tf_eflags;
+	utf->utf_esp      = tf->tf_esp;
+
+	tf->tf_esp = stack;
+	tf->tf_eip = (uintptr_t) curenv->env_pgfault_upcall;
+
+	env_run(curenv);
 }
 

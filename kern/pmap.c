@@ -470,7 +470,6 @@ page_insert(pde_t *pgdir, struct PageInfo *pp, void *va, int perm)
 
     physaddr_t pa = page2pa (pp);
 	if (*pte & PTE_P) {
-        // TODO
         if (PTE_ADDR(*pte) == pa) {
             *pte = pa | perm | PTE_P;
             return 0;
