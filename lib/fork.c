@@ -70,7 +70,7 @@ static int
 duppage(envid_t envid, unsigned pn)
 {
 	// LAB 9: Your code here.
-	//panic("duppage not implemented");
+//	panic("duppage not implemented");
 	pte_t pte = uvpt[pn];
 	void *va = (void *)(pn * PGSIZE);
 	if ((pte & PTE_W) || (pte & PTE_COW)) {
