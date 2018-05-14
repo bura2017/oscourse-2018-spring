@@ -64,10 +64,10 @@ alloc_block(void)
 	// LAB 10: Your code here.
 //	panic("alloc_block not implemented");
 
-    for (uint32_t blockno = 1; blockno < super->s_nblocks * BLKBITSIZE; blockno++) {
+    for (uint32_t blockno = 0; blockno < super->s_nblocks * BLKBITSIZE; blockno++) {
         if (block_is_free(blockno)) {
             bitmap[blockno / 32] &= ~(1 << (blockno % 32));
-            flush_block(diskaddr(blockno));
+            flush_block((void *) &bitmap[blockno / 32]);
             return blockno;
         }
     }
