@@ -475,10 +475,16 @@ env_create(uint8_t *binary, size_t size, enum EnvType type)
 		panic("%s: %i\n", __func__, r);
 	e->env_type = type;
 
-	load_icode(e, binary, size);
-
 	// If this is the file server (type == ENV_TYPE_FS) give it I/O privileges.
-	// LAB 10: Your code here.
+	// LAB 10.
+	if (type == ENV_TYPE_FS) {
+        e->env_tf.tf_eflags |= FL_IOPL_3;
+    } else {
+        e->env_tf.tf_eflags |= FL_IOPL_0;
+    }
+
+    load_icode(e, binary, size);
+
 }
 
 //
