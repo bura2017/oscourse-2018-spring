@@ -226,7 +226,10 @@ trap_dispatch(struct Trapframe *tf)
 		case T_BRKPT:
 			monitor(tf);
 			break;
-		
+
+			// Handle keyboard and serial interrupts.
+			// LAB 11: Your code here.
+
 		default:
 			print_trapframe(tf);
 			if (tf->tf_cs == GD_KT) {
