@@ -73,7 +73,11 @@ duppage(envid_t envid, unsigned pn)
 //	panic("duppage not implemented");
 	pte_t pte = uvpt[pn];
 	void *va = (void *)(pn * PGSIZE);
-	if ((pte & PTE_W) || (pte & PTE_COW)) {
+	if (pte & PTE_SHARE) {
+		if (sys_page_map(0, va, envid, va, PTE_SYSCALL) < 0) {
+			panic("duppage, sys_page_map shared");
+		}
+	} else if ((pte & PTE_W) || (pte & PTE_COW)) {
 		if (sys_page_map(0, va, envid, va, PTE_P | PTE_U | PTE_COW) < 0) {
             panic("ERROR sys_page_map");
         }
@@ -82,12 +86,42 @@ duppage(envid_t envid, unsigned pn)
         }
 	} else {
 		if (sys_page_map(0, va, envid, va, PTE_P | PTE_U) < 0) {
-            panic("ERROR sys_page_map");
+            panic("ERROR duppage, sys_page_map read only");
         }
 	}
 
 	return 0;
 }
+//static int
+//duppage(envid_t envid, unsigned pn)
+//{
+//	int r;
+//
+//	// LAB 9: Your code here.
+//	pte_t pte = uvpt[pn];
+//	void *va = (void *)(pn * PGSIZE);
+//
+//	if (pte & PTE_SHARE) {
+//		r = sys_page_map(0, va, envid, va, PTE_SYSCALL);
+//		if (r < 0)
+//			panic("duppage: sys_page_map shared: %e", r);
+//	} else if ((pte & PTE_W) || (pte & PTE_COW)) {
+//		r = sys_page_map(0, va, envid, va, PTE_P | PTE_U | PTE_COW);
+//		if (r < 0)
+//			panic("duppage: sys_page_map COW: %e", r);
+//
+//		r = sys_page_map(0, va, 0, va, PTE_P | PTE_U | PTE_COW);
+//		if (r < 0)
+//			panic("duppage: sys_page_map change permissions: %e", r);
+//
+//	} else {
+//		r = sys_page_map(0, va, envid, va, PTE_P | PTE_U);
+//		if (r < 0)
+//			panic("duppage: sys_page_map readonly: %e", r);
+//	}
+//
+//	return 0;
+//}
 
 //
 // User-level fork with copy-on-write.
