@@ -152,7 +152,9 @@ sys_env_set_trapframe(envid_t envid, struct Trapframe *tf)
     if (envid2env(envid, &e, 1) < 0) {
         return -E_BAD_ENV;
     }
+    user_mem_assert(e, tf, sizeof(struct Trapframe), PTE_W);
     e->env_tf = *tf;
+    e->env_tf.tf_eflags |= FL_IF;
 
     return 0;
 }
