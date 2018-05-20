@@ -5,7 +5,9 @@
 #include <inc/error.h>
 #include <inc/string.h>
 #include <inc/assert.h>
+#include <inc/vsyscall.h>
 
+#include <kern/vsyscall.h>
 #include <kern/pmap.h>
 #include <kern/kclock.h>
 #include <kern/env.h>
@@ -15,6 +17,7 @@ size_t npages;			// Amount of physical memory (in pages)
 static size_t npages_basemem;	// Amount of base memory (in pages)
 
 // These variables are set in mem_init()
+int *vsys;  // Virtual syscall space
 pde_t *kern_pgdir;		// Kernel's initial page directory
 struct PageInfo *pages;		// Physical page state array
 static struct PageInfo *page_free_list;	// Free list of physical pages
@@ -160,6 +163,10 @@ mem_init(void)
 	memset(envs, 0, sizeof(struct Env) * NENV);
 
 	//////////////////////////////////////////////////////////////////////
+	// Make 'vsys' point to an array of size 'NVSYSCALLS' of int.
+	// LAB 12: Your code here.
+
+	//////////////////////////////////////////////////////////////////////
 	// Now that we've allocated the initial kernel data structures, we set
 	// up the list of free physical pages. Once we've done so, all further
 	// memory management will go through the page_* functions. In
@@ -191,6 +198,14 @@ mem_init(void)
 	//    - envs itself -- kernel RW, user NONE
 	// LAB 8.
 	boot_map_region(kern_pgdir, UENVS, PTSIZE, PADDR(envs), PTE_U);
+
+	//////////////////////////////////////////////////////////////////////
+	// Map the 'vsys' array read-only by the user at linear address UVSYS
+	// (ie. perm = PTE_U | PTE_P).
+	// Permissions:
+	//    - the new image at UVSYS  -- kernel R, user R
+	//    - envs itself -- kernel RW, user NONE
+	// LAB 12: Your code here.
 
 	//////////////////////////////////////////////////////////////////////
 	// Use the physical memory that 'bootstack' refers to as the kernel
@@ -841,6 +856,7 @@ check_kern_pgdir(void)
 		case PDX(KSTACKTOP-1):
 		case PDX(UPAGES):
 		case PDX(UENVS):
+		case PDX(UVSYS):
 			assert(pgdir[i] & PTE_P);
 			break;
 		default:
