@@ -153,7 +153,9 @@ sys_env_set_trapframe(envid_t envid, struct Trapframe *tf)
     if (envid2env(envid, &e, 1) < 0) {
         return -E_BAD_ENV;
     }
+    user_mem_assert(e, tf, sizeof(struct Trapframe), PTE_W);
     e->env_tf = *tf;
+    e->env_tf.tf_eflags |= FL_IF;
 
     return 0;
 }
@@ -450,9 +452,11 @@ sys_ipc_recv(void *dstva)
 static int
 sys_gettime(void)
 {
-	// LAB 12: Your code here.
-	panic("sys_gettime not implemented");
-	return 0;
+	// LAB 12.
+//	panic("sys_gettime not implemented");
+
+    int time = gettime();
+    return time;
 }
 
 // Dispatches to the correct kernel function, passing the arguments.
@@ -505,6 +509,9 @@ syscall(uint32_t syscallno, uint32_t a1, uint32_t a2, uint32_t a3, uint32_t a4, 
 
         case SYS_env_set_trapframe:
             return sys_env_set_trapframe(a1, (struct Trapframe *) a2);
+
+        case SYS_gettime:
+            return sys_gettime();
 
         default:
             panic ("No case syscallno\n");
