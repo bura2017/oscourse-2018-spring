@@ -225,7 +225,12 @@ serve_read(envid_t envid, union Fsipc *ipc)
 	struct Fd *fd = o->o_fd;
 	size_t count = MIN(req->req_n, PGSIZE);
 
-	ssize_t r_count = file_read(o->o_file, ret->ret_buf, count, fd->fd_offset);
+    ssize_t r_count;
+	if (o->o_mode & O_DIRECT) {
+        r_count = direct_file_read(o->o_file, ret->ret_buf, count, fd->fd_offset);
+    } else {
+        r_count = file_read(o->o_file, ret->ret_buf, count, fd->fd_offset);
+    }
 	if (r_count >= 0) {
         fd->fd_offset += r_count;
     }
@@ -257,7 +262,12 @@ serve_write(envid_t envid, struct Fsreq_write *req)
     struct Fd *fd = o->o_fd;
 
     // file_write will extend the file if necessary
-    ssize_t count = file_write(o->o_file, req->req_buf, req->req_n, fd->fd_offset);
+    ssize_t count;
+    if (o->o_mode & O_DIRECT) {
+        count = direct_file_write(o->o_file, req->req_buf, req->req_n, fd->fd_offset);
+    } else {
+        count = file_write(o->o_file, req->req_buf, req->req_n, fd->fd_offset);
+    }
     if (count >= 0) {
         fd->fd_offset += count;
     }

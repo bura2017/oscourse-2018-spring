@@ -420,6 +420,18 @@ file_write(struct File *f, const void *buf, size_t count, off_t offset)
 	return count;
 }
 
+ssize_t
+direct_file_read(struct File *f, void *buf, size_t count, off_t offset) {
+//    cprintf ("direct_file_read visited\n");
+    return file_read (f, buf, count, offset);
+}
+
+int
+direct_file_write(struct File *f, const void *buf, size_t count, off_t offset) {
+//    cprintf ("direct_file_wite visited\n");
+    return file_write (f, buf, count, offset);
+}
+
 // Remove a block from file f.  If it's not there, just silently succeed.
 // Returns 0 on success, < 0 on error.
 static int
