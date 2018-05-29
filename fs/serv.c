@@ -156,6 +156,27 @@ try_open:
 		return r;
 	}
 
+    // search in cache
+    if (req->req_omode & O_DIRECT) {
+        for (int i = 0; i < NDIRECT; i++) {
+            if (f->f_direct[i] != 0) {
+                void *blk = diskaddr(f->f_direct[i]);
+                if (va_is_mapped(blk)) {
+                    sys_page_unmap(0, blk);
+                }
+            }
+        }
+        if (f->f_indirect) {
+            uint32_t *ind = (uint32_t *) diskaddr(f->f_indirect);
+            for (int i = 0; ind[i] != 0; i++) {
+                void *blk = diskaddr(ind[i]);
+                if (va_is_mapped(blk)) {
+                    sys_page_unmap(0, blk);
+                }
+            }
+        }
+    }
+
 	// Save the file pointer
 	o->o_file = f;
 

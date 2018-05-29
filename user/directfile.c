@@ -21,11 +21,11 @@ xopen(const char *path, int mode)
 void
 umain(int argc, char **argv)
 {
+	char buf[512];
 	int r, f, i;
-	struct Fd *fd;
+	/*struct Fd *fd;
 	struct Fd fdcopy;
 	struct Stat st;
-	char buf[512];
 
 	// We open files manually first, to avoid the FD layer
 	if ((r = xopen("/not-found", O_RDONLY|O_DIRECT)) < 0 && r != -E_NOT_FOUND)
@@ -72,7 +72,7 @@ umain(int argc, char **argv)
 	if ((r = devfile.dev_write(FVA, msg, strlen(msg))) && r != -E_DATA_NOT_ALIGNED)
 		panic("file_write: %i", r);
 	cprintf("file_write is good\n");
-	/*
+
 	FVA->fd_offset = 0;
 	memset(buf, 0, sizeof buf);
 	if ((r = devfile.dev_read(FVA, buf, sizeof buf)) < 0)
@@ -82,7 +82,7 @@ umain(int argc, char **argv)
 	if (strcmp(buf, msg) != 0)
 		panic("file_read after file_write returned wrong data");
 	cprintf("file_read after file_write is good\n");
-    */
+
 	// Now we'll try out open
 	if ((r = open("/not-found", O_RDONLY|O_DIRECT)) < 0 && r != -E_NOT_FOUND)
 		panic("open /not-found: %i", r);
@@ -122,27 +122,37 @@ umain(int argc, char **argv)
 	}
 	close(f);
 	cprintf("large file is good\n");
-	
-		if ((f = open("/new", O_WRONLY|O_CREAT)) < 0)
+	*/
+	if ((f = open("/new", O_WRONLY|O_CREAT)) < 0)
 		panic("creat /new: %i", f);
 	memset(buf, 0, sizeof(buf));
-	for (i = 0; i < (NDIRECT*3)*BLKSIZE; i += sizeof(buf)) {
+	for (i = 0; i < 15; i += sizeof(buf)) {
 		*(int*)buf = i;
 		if ((r = write(f, buf, sizeof(buf))) < 0)
 			panic("write /new@%d: %i", i, r);
 	}
 	close(f);
 
-	if ((f = open("/new", O_RDONLY|O_DIRECT)) < 0)
+	if ((f = open("/new", O_WRONLY|O_CREAT|O_DIRECT)) < 0)
+		panic("creat /new: %i", f);
+	memset(buf, 0, sizeof(buf));
+	for (i = 0; i < 15; i += sizeof(buf)) {
+		*(int*)buf = i+1;
+		if ((r = write(f, buf, sizeof(buf))) < 0)
+			panic("write /new@%d: %i", i, r);
+	}
+	close(f);
+
+	if ((f = open("/new", O_RDONLY)) < 0)
 		panic("open /new: %i", f);
-	for (i = 0; i < (NDIRECT*3)*BLKSIZE; i += sizeof(buf)) {
+	for (i = 0; i < 15; i += sizeof(buf)) {
 		*(int*)buf = i;
 		if ((r = readn(f, buf, sizeof(buf))) < 0)
 			panic("read /new@%d: %i", i, r);
 		if (r != sizeof(buf))
 			panic("read /new from %d returned %d < %d bytes",
 			      i, r, sizeof(buf));
-		if (*(int*)buf != i)
+		if (*(int*)buf != i+1)
 			panic("read /new from %d returned bad data %d",
 			      i, *(int*)buf);
 	}
