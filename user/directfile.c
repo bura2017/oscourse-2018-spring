@@ -46,10 +46,8 @@ umain(int argc, char **argv)
 	cprintf("file_stat is good\n");
 
 	memset(buf, 0, sizeof buf);
-	if ((r = devfile.dev_read(FVA, buf, sizeof buf)) < 0)
+	if ((r = devfile.dev_read(FVA, buf, sizeof buf)) && r != -E_DATA_NOT_ALIGNED)
 		panic("file_read: %i", r);
-	if (strcmp(buf, msg) != 0)
-		panic("file_read returned wrong data");
 	cprintf("file_read is good\n");
 
 	if ((r = devfile.dev_close(FVA)) < 0)
@@ -71,10 +69,10 @@ umain(int argc, char **argv)
 	if ((r = xopen("/new-file", O_RDWR|O_CREAT|O_DIRECT)) < 0)
 		panic("serve_open /new-file: %i", r);
 
-	if ((r = devfile.dev_write(FVA, msg, strlen(msg))) != strlen(msg))
+	if ((r = devfile.dev_write(FVA, msg, strlen(msg))) && r != -E_DATA_NOT_ALIGNED)
 		panic("file_write: %i", r);
 	cprintf("file_write is good\n");
-
+	/*
 	FVA->fd_offset = 0;
 	memset(buf, 0, sizeof buf);
 	if ((r = devfile.dev_read(FVA, buf, sizeof buf)) < 0)
@@ -84,7 +82,7 @@ umain(int argc, char **argv)
 	if (strcmp(buf, msg) != 0)
 		panic("file_read after file_write returned wrong data");
 	cprintf("file_read after file_write is good\n");
-
+    */
 	// Now we'll try out open
 	if ((r = open("/not-found", O_RDONLY|O_DIRECT)) < 0 && r != -E_NOT_FOUND)
 		panic("open /not-found: %i", r);
@@ -124,5 +122,31 @@ umain(int argc, char **argv)
 	}
 	close(f);
 	cprintf("large file is good\n");
+	
+		if ((f = open("/new", O_WRONLY|O_CREAT)) < 0)
+		panic("creat /new: %i", f);
+	memset(buf, 0, sizeof(buf));
+	for (i = 0; i < (NDIRECT*3)*BLKSIZE; i += sizeof(buf)) {
+		*(int*)buf = i;
+		if ((r = write(f, buf, sizeof(buf))) < 0)
+			panic("write /new@%d: %i", i, r);
+	}
+	close(f);
+
+	if ((f = open("/new", O_RDONLY|O_DIRECT)) < 0)
+		panic("open /new: %i", f);
+	for (i = 0; i < (NDIRECT*3)*BLKSIZE; i += sizeof(buf)) {
+		*(int*)buf = i;
+		if ((r = readn(f, buf, sizeof(buf))) < 0)
+			panic("read /new@%d: %i", i, r);
+		if (r != sizeof(buf))
+			panic("read /new from %d returned %d < %d bytes",
+			      i, r, sizeof(buf));
+		if (*(int*)buf != i)
+			panic("read /new from %d returned bad data %d",
+			      i, *(int*)buf);
+	}
+	close(f);
+	cprintf("not direct file is good\n");
 }
 

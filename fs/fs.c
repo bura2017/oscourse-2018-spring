@@ -448,23 +448,18 @@ direct_file_read(struct File *f, void *buf, size_t count, off_t offset) {
     const int r_count = MIN(count, f->f_size - offset);
 
     for (off_t pos = offset; pos < offset + r_count; ) {
+        int bn = MIN(BLKSIZE - pos % BLKSIZE, offset + r_count - pos);
+        if (pos % SECTSIZE != 0 || bn % SECTSIZE != 0) {
+            return -E_DATA_NOT_ALIGNED;
+        }
         uint32_t *pblockno;
         if ((r = file_get_blockno(f, pos / BLKSIZE, &pblockno)) < 0)
             return r;
         int blockno = *pblockno;
-        int bn = MIN(BLKSIZE - pos % BLKSIZE, offset + r_count - pos);
         int sn_start = (pos % BLKSIZE) / SECTSIZE + blockno * BLKSECTS;
-        int sn = (bn - 1) / SECTSIZE + 1;
-        //int secno = blockno * BLKSECTS + pos % BLKSIZE / SECTSIZE
+        int sn = bn / SECTSIZE;
         if ((r = ide_read(sn_start, buf, sn)) < 0) {
             panic("in direct_file_read: %i", r);
-        }
-        int off = pos % BLKSIZE - (pos % BLKSIZE) / SECTSIZE * SECTSIZE;
-        if (off != 0) {
-            char *temp_buf = (char *)buf;
-            for (int i = 0; i < bn; i++) {
-                temp_buf[i] = temp_buf[i + off];
-            }
         }
         buf += bn;
         pos += bn;
@@ -482,16 +477,16 @@ direct_file_write(struct File *f, const void *buf, size_t count, off_t offset) {
             return r;
 
     for (off_t pos = offset; pos < offset + count; ) {
-        if (pos % SECTSIZE != 0) {
-            panic ("data not aligned\n");
+        int bn = MIN(BLKSIZE - pos % BLKSIZE, offset + count - pos);
+        if (pos % SECTSIZE != 0 || bn % SECTSIZE != 0) {
+            return -E_DATA_NOT_ALIGNED;
         }
         uint32_t *pblockno;
         if ((r = file_get_blockno(f, pos / BLKSIZE, &pblockno)) < 0)
             return r;
         int blockno = *pblockno;
-        int bn = MIN(BLKSIZE - pos % BLKSIZE, offset + count - pos);
         int sn_start = (pos % BLKSIZE) / SECTSIZE + blockno * BLKSECTS;
-        int sn = (bn - 1) / SECTSIZE + 1;
+        int sn = bn / SECTSIZE;
         if ((r = ide_write(sn_start, buf, sn)) < 0) {
             panic("in direct_file_write: %i", r);
         }
