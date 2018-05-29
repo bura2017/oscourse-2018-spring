@@ -124,11 +124,12 @@ fork(void)
 		return 0;
 	}
 
-	for (int pde = 0; pde < PDX(UTOP); pde++) {
+int pde, pte;
+	for (pde = 0; pde < PDX(UTOP); pde++) {
 		if (!(uvpd[pde] & PTE_P))
 			continue;
 
-		for (int pte = 0; pte < NPTENTRIES; pte++) {
+		for (pte = 0; pte < NPTENTRIES; pte++) {
             uint32_t pgnum = (pde << 10) | pte;
 			if (pgnum == PGNUM(UXSTACKTOP - PGSIZE)) {
 				if (sys_page_alloc(envid, (void *)(UXSTACKTOP - PGSIZE), PTE_U | PTE_P | PTE_W) < 0) {

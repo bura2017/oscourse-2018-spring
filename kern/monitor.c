@@ -83,7 +83,8 @@ mon_backtrace(int argc, char **argv, struct Trapframe *tf)
 	{
 		uint32_t eip = *((uint32_t*)ebp+1);
 		cprintf("  ebp %08x  eip %08x  args", ebp, eip);
-		for (int i = 2; i < 7; i++) 
+int i;
+		for (i = 2; i < 7; i++) 
 			cprintf(" %08x", *((uint32_t*)ebp+i));
 		cprintf("\n");
 
@@ -118,7 +119,8 @@ mon_list_pages(int argc, char **argv, struct Trapframe *tf)
 	cprintf("npages: %d\n", npages);
 
 	int n = 1;
-	for (int i = 1; i <= npages; i++) {
+int i;
+	for (i = 1; i <= npages; i++) {
         int temp = (pages[i].pp_link == NULL) ? 0 : 1;
 		if ((temp != free)) {
 			if (n == i) {

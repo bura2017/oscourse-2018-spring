@@ -67,7 +67,8 @@ ipc_send(envid_t to_env, uint32_t val, void *pg, int perm)
         pg = (void *) UTOP;
     }
 
-    for (int k = sys_ipc_try_send(to_env, val, pg, perm); k; k = sys_ipc_try_send(to_env, val, pg, perm)) {
+int k;
+    for (k = sys_ipc_try_send(to_env, val, pg, perm); k; k = sys_ipc_try_send(to_env, val, pg, perm)) {
         if (k == -E_IPC_NOT_RECV) {
             sys_yield();
         } else if (k != 0) {

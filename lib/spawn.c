@@ -300,9 +300,10 @@ static int
 copy_shared_pages(envid_t child)
 {
 	// LAB 11: Your code here.
-	for (int pde = 0; pde < PDX(UTOP); pde++) {
+int pde, pte;
+	for (pde = 0; pde < PDX(UTOP); pde++) {
 		if (uvpd[pde] & PTE_P) {
-            for (int pte = 0; pte < NPTENTRIES; pte++) {
+            for (pte = 0; pte < NPTENTRIES; pte++) {
                 void *pa = PGADDR(pde, pte, 0);
                 uint32_t pgnum = PGNUM(pa);
                 if ((uvpt[pgnum] & PTE_P) && (uvpt[pgnum] & PTE_SHARE)) {

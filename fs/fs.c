@@ -64,7 +64,8 @@ alloc_block(void)
 	// LAB 10: Your code here.
 //	panic("alloc_block not implemented");
 
-    for (uint32_t blockno = 1; blockno < super->s_nblocks * BLKBITSIZE; blockno++) {
+uint32_t blockno;
+    for (blockno = 1; blockno < super->s_nblocks * BLKBITSIZE; blockno++) {
         if (block_is_free(blockno)) {
             bitmap[blockno / 32] &= ~(1 << (blockno % 32));
             flush_block((void *) &bitmap[blockno / 32]);
@@ -154,7 +155,6 @@ file_block_walk(struct File *f, uint32_t filebno, uint32_t **ppdiskbno, bool all
         return 0;
     }
     if (filebno < NDIRECT + NINDIRECT) {
-        cprintf("TUT\n");
         uint32_t indir = f->f_indirect;
         if (indir) {
             uint32_t *temp = (uint32_t *) diskaddr(indir);
@@ -195,7 +195,6 @@ int file_get_blockno(struct File *f, uint32_t filebno, uint32_t **pdiskbno) {
     if (!**pdiskbno) {
         return -E_NO_DISK;
     }
-    cprintf("%d bno %d\n", filebno, **pdiskbno);
     diskaddr(**pdiskbno);
 
     return 0;
@@ -217,7 +216,6 @@ file_get_block(struct File *f, uint32_t filebno, char **blk)
     if (!*pdiskbno) {
         return -E_NO_DISK;
     }
-    cprintf("%d bno %d\n", filebno, *pdiskbno);
     *blk = (char *) diskaddr(*pdiskbno);
 
     return 0;
@@ -328,7 +326,6 @@ walk_path(const char *path, struct File **pdir, struct File **pf, char *lastelem
 		path = skip_slash(path);
 
 		if (dir->f_type != FTYPE_DIR) {
-            cprintf("TUT %d\n", dir->f_type);
             return -E_NOT_FOUND;
         }
 
@@ -442,40 +439,42 @@ file_write(struct File *f, const void *buf, size_t count, off_t offset)
 
 ssize_t
 direct_file_read(struct File *f, void *buf, size_t count, off_t offset) {
-//    cprintf ("direct_file_read visited\n");
+    //cprintf ("direct_file_read visited\n");
     int r;
     if (offset >= f->f_size){
         return 0;
     }
 
-    count = MIN(count, f->f_size - offset);
-    for (off_t pos = offset; pos < offset + count; ) {
-        uint32_t *blockno;
-        if ((r = file_get_blockno(f, pos / BLKSIZE, &blockno)) < 0)
+    const int r_count = MIN(count, f->f_size - offset);
+
+    for (off_t pos = offset; pos < offset + r_count; ) {
+        uint32_t *pblockno;
+        if ((r = file_get_blockno(f, pos / BLKSIZE, &pblockno)) < 0)
             return r;
-        *blockno += pos % BLKSIZE;
-        int bn = MIN(BLKSIZE - pos % BLKSIZE, offset + count - pos);
+        int blockno = *pblockno;
+        int bn = MIN(BLKSIZE - pos % BLKSIZE, offset + r_count - pos);
+        int sn_start = (pos % BLKSIZE) / SECTSIZE + blockno * BLKSECTS;
         int sn = (bn - 1) / SECTSIZE + 1;
-        for (int i = 0; i < sn / 256; i++) {
-            panic("read big direct\n");
-            if ((r = ide_read((*blockno + i * (256 / BLKSECTS)) * BLKSECTS, buf, 256)) < 0) {
-                panic("in direct_file_read: %i", r);
-            }
-            buf += 256 * SECTSIZE;
-        }
-        if ((r = ide_read((*blockno + sn / BLKSECTS) * BLKSECTS, buf, sn % 256)) < 0) {
+        //int secno = blockno * BLKSECTS + pos % BLKSIZE / SECTSIZE
+        if ((r = ide_read(sn_start, buf, sn)) < 0) {
             panic("in direct_file_read: %i", r);
         }
-        buf += bn % (256 * SECTSIZE);
+        int off = pos % BLKSIZE - (pos % BLKSIZE) / SECTSIZE * SECTSIZE;
+        if (off != 0) {
+            char *temp_buf = (char *)buf;
+            for (int i = 0; i < bn; i++) {
+                temp_buf[i] = temp_buf[i + off];
+            }
+        }
+        buf += bn;
         pos += bn;
     }
 
-    return count;
+    return r_count;
 }
 
 int
 direct_file_write(struct File *f, const void *buf, size_t count, off_t offset) {
-//    cprintf ("direct_file_wite visited\n");
     int r;
     // Extend file if necessary
     if (offset + count > f->f_size)
@@ -483,27 +482,19 @@ direct_file_write(struct File *f, const void *buf, size_t count, off_t offset) {
             return r;
 
     for (off_t pos = offset; pos < offset + count; ) {
-        uint32_t *blockno;
-        if ((r = file_get_blockno(f, pos / BLKSIZE, &blockno)) < 0)
+        if (pos % SECTSIZE != 0) {
+            panic ("data not aligned\n");
+        }
+        uint32_t *pblockno;
+        if ((r = file_get_blockno(f, pos / BLKSIZE, &pblockno)) < 0)
             return r;
-        *blockno += pos % BLKSIZE;
+        int blockno = *pblockno;
         int bn = MIN(BLKSIZE - pos % BLKSIZE, offset + count - pos);
-//        int sn = (bn - 1) / SECTSIZE + 1;
-//        for (int i = 0; i < sn / 256; i++) {
-//            panic("write big direct\n");
-//            if ((r = ide_write((*blockno + i * (256 / BLKSECTS)) * BLKSECTS, buf, 256)) < 0) {
-//                panic("in direct_file_write: %i", r);
-//            }
-//            buf += 256 * SECTSIZE;
-//        }
-//        if ((r = ide_write((*blockno + sn / BLKSECTS) * BLKSECTS, buf, sn % 256)) < 0) {
-//            panic("in direct_file_write: %i", r);
-//        }
-//        buf += bn % (256 * SECTSIZE);
-        if ((r = ide_write((*blockno) * BLKSECTS, buf, 1)) < 0) {
+        int sn_start = (pos % BLKSIZE) / SECTSIZE + blockno * BLKSECTS;
+        int sn = (bn - 1) / SECTSIZE + 1;
+        if ((r = ide_write(sn_start, buf, sn)) < 0) {
             panic("in direct_file_write: %i", r);
         }
-        cprintf("bn %d\n", bn);
         buf += bn;
         pos += bn;
     }

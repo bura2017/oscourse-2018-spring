@@ -249,7 +249,8 @@ find_function(const char * const fname)
 	const char *stabstr = __STABSTR_BEGIN__;
 	//LAB 3.
 	
-	for (int i = 0; i < stab_end - stabs; i++) {
+int i;
+	for (i = 0; i < stab_end - stabs; i++) {
 		if (stabs[i].n_type != N_FUN) continue;
 		char *str = (char*)stabstr + stabs[i].n_strx;
 		size_t len = strfind(str, ':') - str;

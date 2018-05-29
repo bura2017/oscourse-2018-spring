@@ -318,7 +318,8 @@ region_alloc(struct Env *e, void *va, size_t len)
 	//   You should round va down, and round (va + len) up.
 	//   (Watch out for corner-cases!)
 
-    for (uint8_t *addr = ROUNDDOWN(va, PGSIZE); addr < ROUNDUP((uint8_t *) va + len, PGSIZE); addr += PGSIZE) {
+uint8_t *addr;
+    for (addr = ROUNDDOWN(va, PGSIZE); addr < ROUNDUP((uint8_t *) va + len, PGSIZE); addr += PGSIZE) {
         struct PageInfo *pp = page_alloc(0);
         if (!pp) {
             panic("region_alloc: out of memory %p %u", va, len);
@@ -340,7 +341,8 @@ bind_functions(struct Env *e, struct Elf *elf)
 	const char *name;
 	int addr;
 
-	for (int i = 0; i < elf->e_shnum; i++) {
+int i;
+	for (i = 0; i < elf->e_shnum; i++) {
 		if(secthdr[i].sh_type == ELF_SHT_SYMTAB) { //symbol table
 			elf32_sym = (struct Elf32_Sym *) ((uint8_t *)elf + secthdr[i].sh_offset);
 			char *temp = (char *) ((uint8_t *)elf + secthdr[secthdr[i].sh_link].sh_offset);
