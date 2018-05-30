@@ -162,6 +162,9 @@ try_open:
             if (f->f_direct[i] != 0) {
                 void *blk = diskaddr(f->f_direct[i]);
                 if (va_is_mapped(blk)) {
+		    if (va_is_dirty(blk)) {
+                        flush_block(blk);
+                    }
                     sys_page_unmap(0, blk);
                 }
             }
@@ -171,6 +174,9 @@ try_open:
             for (int i = 0; ind[i] != 0; i++) {
                 void *blk = diskaddr(ind[i]);
                 if (va_is_mapped(blk)) {
+		    if (va_is_dirty(blk)) {
+                        flush_block(blk);
+                    }
                     sys_page_unmap(0, blk);
                 }
             }
